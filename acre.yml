@@ -3,6 +3,14 @@ version: 1
 # Identifier for each worktree and its site. Default: $PROJECT-$TREE
 site_name: $PROJECT-$TREE
 
+# Where worktrees are created. Resolves relative to the repo, or accepts an
+# absolute path or ~ for home. Default ".." gives the recommended sibling
+# layout next to the repo (../<repo>-<branch>), per git-worktree best practices.
+#   ..                -> ../acre-feature-x   (sibling, recommended)
+#   .acre/worktrees   -> inside the repo
+#   ~/worktrees       -> one central place for every repo
+worktrees_dir: ..
+
 # Gitignored files to copy from the main worktree into each new one.
 copy:
   - .env

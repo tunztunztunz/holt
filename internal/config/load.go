@@ -39,4 +39,7 @@ func (p *Profile) applyDefaults() {
 	if len(p.Guards) == 0 {
 		p.Guards = []string{"uncommitted", "unmerged"}
 	}
+	if p.WorktreesDir == "" {
+		p.WorktreesDir = ".."
+	}
 }
