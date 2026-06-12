@@ -1,0 +1,36 @@
+version: 1
+
+# Identifier for each worktree and its site. Default: $PROJECT-$TREE
+site_name: $PROJECT-$TREE
+
+# Gitignored files to copy from the main worktree into each new one.
+copy:
+  - .env
+
+# Large, branch-invariant dirs to symlink instead of copy (saves disk + time).
+# link:
+#   - node_modules
+#   - vendor
+
+# Rewrite per-worktree values into a dotenv file so trees don't collide.
+# (Uncomment the port: block below if you reference $PORT here.)
+# env:
+#   - file: .env
+#     set:
+#       APP_URL: http://$SITE_NAME.test
+#       PORT: $PORT
+
+# Allocate a unique port per worktree, exposed as $PORT.
+# port:
+#   range: [4000, 4999]
+
+# Commands run in each new worktree on 'acre new', in order.
+setup: []
+
+# Commands run in a worktree on 'acre rm', before removal.
+teardown: []
+
+# Warn + confirm before destructive actions (rm, gc).
+guards:
+  - uncommitted
+  - unmerged
