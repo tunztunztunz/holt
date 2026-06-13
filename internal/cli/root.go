@@ -14,4 +14,5 @@ type CLI struct {
 	Validate validateCmd `cmd:"" help:"Load and validate acre.yml."`
 	New      newCmd      `cmd:"" help:"Create and provision a worktree."`
 	Ls       LsCmd       `cmd:"" help:"List worktrees with status."`
+	Cd       CdCmd       `cmd:"" help:"Print a worktree's path (for shell cd)."`
 }
