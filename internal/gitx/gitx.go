@@ -8,13 +8,43 @@ import (
 	"strings"
 )
 
-// DefaultBranch returns the repo's default branch (origin/HEAD), or "main".
-func DefaultBranch() string {
-	ref, err := run("", "symbolic-ref", "refs/remotes/origin/HEAD")
+type Worktree struct {
+	Path   string
+	Branch string
+}
+
+// WorktreeList
+func WorktreeList(repoRoot string) ([]Worktree, error) {
+	out, err := run("", "-C", repoRoot, "worktree", "list", "--porcelain")
 	if err != nil {
-		return "main"
+		return nil, err
 	}
-	return strings.TrimPrefix(ref, "refs/remotes/origin/")
+
+	var (
+		list []Worktree
+		cur  Worktree
+	)
+
+	for _, line := range strings.Split(out, "\n") {
+		switch {
+		case strings.HasPrefix(line, "worktree "):
+			cur = Worktree{Path: strings.TrimPrefix(line, "worktree ")}
+
+		case strings.HasPrefix(line, "branch "):
+			cur.Branch = strings.TrimPrefix(strings.TrimPrefix(line, "branch "), "refs/heads/")
+
+		case line == "":
+			if cur.Path != "" {
+				list = append(list, cur)
+			}
+			cur = Worktree{}
+		}
+	}
+	if cur.Path != "" {
+		list = append(list, cur)
+	}
+
+	return list, nil
 }
 
 // WorktreeAdd creates a worktree; newBranch=false attaches an existing branch.
