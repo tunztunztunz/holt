@@ -9,10 +9,11 @@ type Globals struct {
 type CLI struct {
 	Globals
 
-	Version  versionCmd  `cmd:"" help:"Print the acre version."`
-	Init     initCmd     `cmd:"" help:"Scaffold acre.yml in the repo root."`
-	Validate validateCmd `cmd:"" help:"Load and validate acre.yml."`
-	New      newCmd      `cmd:"" help:"Create and provision a worktree."`
-	Ls       LsCmd       `cmd:"" help:"List worktrees with status."`
-	Cd       CdCmd       `cmd:"" help:"Print a worktree's path (for shell cd)."`
+	ShellInit ShellInitCmd `cmd:"" help:"Print shell integration (eval in your rc file)."`
+	Version   versionCmd   `cmd:"" help:"Print the acre version."`
+	Init      initCmd      `cmd:"" help:"Scaffold acre.yml in the repo root."`
+	Validate  validateCmd  `cmd:"" help:"Load and validate acre.yml."`
+	New       newCmd       `cmd:"" help:"Create and provision a worktree."`
+	Ls        LsCmd        `cmd:"" help:"List worktrees with status."`
+	Cd        CdCmd        `cmd:"" help:"Print a worktree's path (for shell cd)."`
 }
