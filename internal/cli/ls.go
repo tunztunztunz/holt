@@ -10,6 +10,7 @@ import (
 	"charm.land/lipgloss/v2/table"
 	"github.com/tunztunztunz/acre/internal/gitx"
 	"github.com/tunztunztunz/acre/internal/state"
+	"github.com/tunztunztunz/acre/internal/ui"
 )
 
 type lsRow struct {
@@ -62,18 +63,15 @@ func buildRows(recs map[string]*state.Record) []lsRow {
 
 // emitTable renders the human-facing table to stdout — this is the command result.
 func emitTable(rows []lsRow) error {
-	header := lipgloss.NewStyle().Bold(true).Padding(0, 1)
-	cell := lipgloss.NewStyle().Padding(0, 1)
-
 	t := table.New().
 		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("240"))).
+		BorderStyle(ui.TableBorder).
 		Headers("NAME", "BRANCH", "PORT", "GIT", "LAST", "STATUS").
 		StyleFunc(func(row, _ int) lipgloss.Style {
 			if row == table.HeaderRow {
-				return header
+				return ui.TableHeader
 			}
-			return cell
+			return ui.TableCell
 		})
 
 	for _, r := range rows {

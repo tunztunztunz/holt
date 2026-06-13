@@ -6,17 +6,9 @@ import (
 	"os"
 	"slices"
 
-	"charm.land/lipgloss/v2"
+	"charm.land/huh/v2"
 	"github.com/sahilm/fuzzy"
 	"github.com/tunztunztunz/acre/internal/state"
-)
-
-var (
-	pickTitle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("212"))
-	pickIndex  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	pickName   = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
-	pickBranch = lipgloss.NewStyle().Foreground(lipgloss.Color("244")).Italic(true)
-	pickPrompt = lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true)
 )
 
 type CdCmd struct {
@@ -71,24 +63,32 @@ func fuzzyMatch(query string, recs []*state.Record) []*state.Record {
 	return out
 }
 
+// pick presents an interactive selector over ambiguous fuzzy matches. It uses
+// huh, rendered on stderr (and reading stdin), so stdout stays the clean path
+// the shell function captures — the same contract the old hand-rolled prompt
+// kept, now reusable for any future selector.
 func pick(query string, matches []*state.Record) (*state.Record, error) {
-	fmt.Fprintln(os.Stderr, pickTitle.Render(
-		fmt.Sprintf("%d worktrees match %q:", len(matches), query)))
-
+	opts := make([]huh.Option[*state.Record], len(matches))
 	for i, r := range matches {
-		fmt.Fprintln(os.Stderr, lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			pickIndex.Render(fmt.Sprintf(" %2d  ", i+1)),
-			pickName.Render(r.SiteName),
-			"  ",
-			pickBranch.Render(r.Branch),
-		))
+		label := r.SiteName
+		if r.Branch != "" {
+			label += "  " + r.Branch
+		}
+		opts[i] = huh.NewOption(label, r)
 	}
-	fmt.Fprint(os.Stderr, pickPrompt.Render("› select: "))
 
-	var choice int
-	if _, err := fmt.Fscanln(os.Stdin, &choice); err != nil || choice < 1 || choice > len(matches) {
-		return nil, Exitf(ExitUsage, "invalid selection")
+	var chosen *state.Record
+	sel := huh.NewSelect[*state.Record]().
+		Title(fmt.Sprintf("%d worktrees match %q", len(matches), query)).
+		Options(opts...).
+		Value(&chosen)
+
+	form := huh.NewForm(huh.NewGroup(sel)).
+		WithOutput(os.Stderr).
+		WithInput(os.Stdin)
+
+	if err := form.Run(); err != nil {
+		return nil, Exitf(ExitUsage, "selection cancelled")
 	}
-	return matches[choice-1], nil
+	return chosen, nil
 }
