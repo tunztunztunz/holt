@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
 	"strconv"
@@ -113,19 +112,6 @@ func emitPorcelain(rows []lsRow) error {
 			r.LastActivity.UTC().Format(time.RFC3339),
 		)
 	}
-	return nil
-}
-
-// emitJSON wraps rows in a stable envelope. Placeholder — flesh out in Step 4.
-func emitJSON(kind string, rows []lsRow) error {
-	b, err := json.MarshalIndent(map[string]any{
-		"kind": kind,
-		"data": rows,
-	}, "", "  ")
-	if err != nil {
-		return Exitf(ExitRuntime, "%v", err)
-	}
-	resultf("%s\n", b)
 	return nil
 }
 
