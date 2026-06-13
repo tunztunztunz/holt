@@ -12,6 +12,9 @@ func Execute() {
 	kctx := kong.Parse(&cli,
 		kong.Name("acre"),
 		kong.Description("Spin up, manage, and tear down git worktrees."),
+		kong.BindToProvider(provideRoot),
+		kong.BindToProvider(provideProfile),
+		kong.BindToProvider(provideStore),
 	)
 
 	err := kctx.Run(&cli.Globals)

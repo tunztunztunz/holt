@@ -15,28 +15,14 @@ type newCmd struct {
 	Branch string `arg:"" help:"Branch to create and check out in the new worktree."`
 }
 
-func (c *newCmd) Run() error {
-	branch := c.Branch
-	root, err := gitx.RepoRoot()
-	if err != nil {
-		return Exitf(ExitUsage, "%v", err)
-	}
-
-	profile, err := config.Load(root)
-	if err != nil {
-		return Exitf(ExitUsage, "%v", err)
-	}
+func (c *newCmd) Run(root Root, profile *config.Profile, store *state.Store) error {
+	repo := string(root)
 
 	if err := profile.Validate(); err != nil {
 		return Exitf(ExitUsage, "%v", err)
 	}
 
-	v, err := vars.Resolve(root, branch, profile)
-	if err != nil {
-		return Exitf(ExitUsage, "%v", err)
-	}
-
-	store, err := state.Load(root)
+	v, err := vars.Resolve(repo, c.Branch, profile)
 	if err != nil {
 		return Exitf(ExitUsage, "%v", err)
 	}
@@ -56,13 +42,13 @@ func (c *newCmd) Run() error {
 	}
 	v.Port = port
 
-	if err := gitx.WorktreeAdd(root, v.Worktree, branch, true); err != nil {
+	if err := gitx.WorktreeAdd(repo, v.Worktree, c.Branch, true); err != nil {
 		return Exitf(ExitConflict, "%v", err)
 	}
 
 	rec := &state.Record{
 		SiteName:     v.SiteName,
-		Branch:       branch,
+		Branch:       c.Branch,
 		Path:         v.Worktree,
 		Port:         port,
 		Status:       "provisioning",
@@ -71,19 +57,19 @@ func (c *newCmd) Run() error {
 	}
 	store.Worktrees[v.SiteName] = rec
 
-	if err = state.Save(root, store); err != nil {
+	if err = state.Save(repo, store); err != nil {
 		return Exitf(ExitRuntime, "%v", err)
 	}
 
-	if err := provisionWorktree(root, v, profile); err != nil {
+	if err := provisionWorktree(repo, v, profile); err != nil {
 		rec.Status = "broken"
-		_ = state.Save(root, store)
+		_ = state.Save(repo, store)
 		return Exitf(ExitRuntime, "%v", err)
 	}
 
 	rec.Status = "ready"
 	rec.LastActivity = time.Now()
-	if err := state.Save(root, store); err != nil {
+	if err := state.Save(repo, store); err != nil {
 		return Exitf(ExitRuntime, "%v", err)
 	}
 

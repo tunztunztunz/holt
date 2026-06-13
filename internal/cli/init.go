@@ -3,18 +3,12 @@ package cli
 import (
 	"os"
 	"path/filepath"
-
-	"github.com/tunztunztunz/acre/internal/gitx"
 )
 
 type initCmd struct{}
 
-func (c *initCmd) Run(g *Globals) error {
-	root, err := gitx.RepoRoot()
-	if err != nil {
-		return Exitf(ExitUsage, "%v", err)
-	}
-	path := filepath.Join(root, "acre.yml")
+func (c *initCmd) Run(root Root, g *Globals) error {
+	path := filepath.Join(string(root), "acre.yml")
 	if _, err := os.Stat(path); err == nil && !g.Force {
 		return Exitf(ExitConflict, "acre.yml already exists (use --force)")
 	}
