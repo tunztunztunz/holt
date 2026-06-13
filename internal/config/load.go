@@ -34,12 +34,9 @@ func (p *Profile) applyDefaults() {
 		p.SiteName = "$PROJECT-$TREE"
 	}
 	if p.WorktreesDir == "" {
-		p.WorktreesDir = ".acre/worktrees"
+		p.WorktreesDir = ".." // sibling layout by default, matching `acre init`
 	}
 	if len(p.Guards) == 0 {
 		p.Guards = []string{"uncommitted", "unmerged"}
-	}
-	if p.WorktreesDir == "" {
-		p.WorktreesDir = ".."
 	}
 }
