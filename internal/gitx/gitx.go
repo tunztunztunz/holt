@@ -13,7 +13,7 @@ type Worktree struct {
 	Branch string
 }
 
-// WorktreeList
+// WorktreeList returns the repo's worktrees as reported by git.
 func WorktreeList(repoRoot string) ([]Worktree, error) {
 	out, err := run("", "-C", repoRoot, "worktree", "list", "--porcelain")
 	if err != nil {
@@ -25,7 +25,7 @@ func WorktreeList(repoRoot string) ([]Worktree, error) {
 		cur  Worktree
 	)
 
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		switch {
 		case strings.HasPrefix(line, "worktree "):
 			cur = Worktree{Path: strings.TrimPrefix(line, "worktree ")}

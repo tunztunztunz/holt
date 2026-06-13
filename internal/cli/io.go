@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// Should these be iota?
+// Exit codes are an external contract.
 const (
 	ExitOK       = 0
 	ExitRuntime  = 1

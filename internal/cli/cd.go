@@ -2,7 +2,9 @@ package cli
 
 import (
 	"fmt"
+	"maps"
 	"os"
+	"slices"
 
 	"charm.land/lipgloss/v2"
 	"github.com/sahilm/fuzzy"
@@ -39,10 +41,7 @@ func resolveWorktree(query string, recs map[string]*state.Record) (*state.Record
 		return nil, Exitf(ExitUsage, "no worktree named %q (provide an exact name)", query)
 	}
 
-	list := make([]*state.Record, 0, len(recs))
-	for _, r := range recs {
-		list = append(list, r)
-	}
+	list := slices.Collect(maps.Values(recs))
 
 	switch matches := fuzzyMatch(query, list); len(matches) {
 	case 0:

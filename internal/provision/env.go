@@ -1,9 +1,10 @@
 package provision
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/tunztunztunz/acre/internal/config"
@@ -44,7 +45,7 @@ func RenderEnv(worktree string, b config.EnvBlock, expand func(string) (string, 
 		}
 	}
 
-	for _, k := range sortedKeys(remaining) {
+	for _, k := range slices.Sorted(maps.Keys(remaining)) {
 		val, err := expand(b.Set[k])
 		if err != nil {
 			return err
@@ -59,14 +60,10 @@ func RenderEnv(worktree string, b config.EnvBlock, expand func(string) (string, 
 		}
 	}
 
-	absent := map[string]bool{}
-	for k := range b.Ensure {
-		if !present[k] {
-			absent[k] = true
+	for _, k := range slices.Sorted(maps.Keys(b.Ensure)) {
+		if present[k] {
+			continue
 		}
-	}
-
-	for _, k := range sortedKeys(absent) {
 		val, err := expand(b.Ensure[k])
 		if err != nil {
 			return err
@@ -75,17 +72,6 @@ func RenderEnv(worktree string, b config.EnvBlock, expand func(string) (string, 
 	}
 
 	return os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
-}
-
-// sortedKeys returns a map's keys in stable alphabetical order, so appended
-// lines don't shuffle run-to-run (Go map iteration is randomized).
-func sortedKeys(m map[string]bool) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 func keyOf(line string) (string, bool) {

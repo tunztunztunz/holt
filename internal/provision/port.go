@@ -25,7 +25,7 @@ func AllocatePort(p *config.PortBlock, siteName string, taken map[int]bool) (int
 
 		start := lo + int(h.Sum32())%span
 
-		for i := 0; i < span; i++ {
+		for i := range span {
 			port := lo + (start-lo+i)%span
 			if taken[port] || !isFree(port) {
 				continue
