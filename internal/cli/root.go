@@ -13,4 +13,5 @@ type CLI struct {
 	Init     initCmd     `cmd:"" help:"Scaffold acre.yml in the repo root."`
 	Validate validateCmd `cmd:"" help:"Load and validate acre.yml."`
 	New      newCmd      `cmd:"" help:"Create and provision a worktree."`
+	Ls       LsCmd       `cmd:"" help:"List worktrees with status."`
 }

@@ -43,10 +43,10 @@ func provideProfile() (*config.Profile, error) {
 // declares *state.Store gets a git-true view for free.
 func provideStore() (*state.Store, error) {
 	root, err := provideRoot()
-	sRoot := string(root)
 	if err != nil {
 		return nil, err
 	}
+	sRoot := string(root)
 
 	s, err := state.Load(sRoot)
 	if err != nil {
