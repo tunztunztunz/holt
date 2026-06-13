@@ -4,34 +4,26 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
 	"github.com/tunztunztunz/acre/internal/gitx"
 )
 
-func newInitCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "init",
-		Short: "Scaffold acre.yml in the repo root",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			root, err := gitx.RepoRoot()
-			if err != nil {
-				return Exitf(ExitUsage, "%v", err)
-			}
-			path := filepath.Join(root, "acre.yml")
-			force, _ := cmd.Flags().GetBool("force")
-			if _, err := os.Stat(path); err == nil && !force {
-				return Exitf(ExitConflict, "acre.yml already exists (use --force)")
-			}
-			if err := os.WriteFile(path, []byte(starterProfile), 0o644); err != nil {
-				return Exitf(ExitRuntime, "%v", err)
-			}
-			infof("wrote %s", path)
+type initCmd struct{}
 
-			return nil
-		},
+func (c *initCmd) Run(g *Globals) error {
+	root, err := gitx.RepoRoot()
+	if err != nil {
+		return Exitf(ExitUsage, "%v", err)
 	}
-	cmd.Flags().Bool("force", false, "overwrite an existing acre.yml file")
-	return cmd
+	path := filepath.Join(root, "acre.yml")
+	if _, err := os.Stat(path); err == nil && !g.Force {
+		return Exitf(ExitConflict, "acre.yml already exists (use --force)")
+	}
+	if err := os.WriteFile(path, []byte(starterProfile), 0o644); err != nil {
+		return Exitf(ExitRuntime, "%v", err)
+	}
+	infof("wrote %s", path)
+
+	return nil
 }
 
 // starterProfile is the acre.yml that `acre init` scaffolds into a new repo.

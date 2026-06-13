@@ -3,10 +3,18 @@ package cli
 import (
 	"errors"
 	"os"
+
+	"github.com/alecthomas/kong"
 )
 
 func Execute() {
-	err := newRootCmd().Execute()
+	var cli CLI
+	kctx := kong.Parse(&cli,
+		kong.Name("acre"),
+		kong.Description("Spin up, manage, and tear down git worktrees."),
+	)
+
+	err := kctx.Run(&cli.Globals)
 	if err == nil {
 		os.Exit(ExitOK)
 	}

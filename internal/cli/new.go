@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/tunztunztunz/acre/internal/config"
 	"github.com/tunztunztunz/acre/internal/gitx"
 	"github.com/tunztunztunz/acre/internal/provision"
@@ -12,87 +11,84 @@ import (
 	"github.com/tunztunztunz/acre/internal/vars"
 )
 
-func newNewCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "new <branch>",
-		Short: "Create and provision a worktree",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			branch := args[0]
-			root, err := gitx.RepoRoot()
-			if err != nil {
-				return Exitf(ExitUsage, "%v", err)
-			}
+type newCmd struct {
+	Branch string `arg:"" help:"Branch to create and check out in the new worktree."`
+}
 
-			profile, err := config.Load(root)
-			if err != nil {
-				return Exitf(ExitUsage, "%v", err)
-			}
-
-			if err := profile.Validate(); err != nil {
-				return Exitf(ExitUsage, "%v", err)
-			}
-
-			v, err := vars.Resolve(root, branch, profile)
-			if err != nil {
-				return Exitf(ExitUsage, "%v", err)
-			}
-
-			store, err := state.Load(root)
-			if err != nil {
-				return Exitf(ExitUsage, "%v", err)
-			}
-
-			if _, ok := store.Worktrees[v.SiteName]; ok {
-				return Exitf(ExitConflict, "worktree %s already exists", v.SiteName)
-			}
-
-			taken := make(map[int]bool)
-			for _, t := range store.Worktrees {
-				taken[t.Port] = true
-			}
-
-			port, err := provision.AllocatePort(profile.Port, v.SiteName, taken)
-			if err != nil {
-				return Exitf(ExitUsage, "%v", err)
-			}
-			v.Port = port
-
-			if err := gitx.WorktreeAdd(root, v.Worktree, branch, true); err != nil {
-				return Exitf(ExitConflict, "%v", err)
-			}
-
-			rec := &state.Record{
-				SiteName:     v.SiteName,
-				Branch:       branch,
-				Path:         v.Worktree,
-				Port:         port,
-				Status:       "provisioning",
-				CreatedAt:    time.Now(),
-				LastActivity: time.Now(),
-			}
-			store.Worktrees[v.SiteName] = rec
-
-			if err = state.Save(root, store); err != nil {
-				return Exitf(ExitRuntime, "%v", err)
-			}
-
-			if err := provisionWorktree(root, v, profile); err != nil {
-				rec.Status = "broken"
-				_ = state.Save(root, store)
-				return Exitf(ExitRuntime, "%v", err)
-			}
-
-			rec.Status = "ready"
-			rec.LastActivity = time.Now()
-			if err := state.Save(root, store); err != nil {
-				return Exitf(ExitRuntime, "%v", err)
-			}
-
-			resultf("%s\n", v.Worktree)
-			return nil
-		},
+func (c *newCmd) Run() error {
+	branch := c.Branch
+	root, err := gitx.RepoRoot()
+	if err != nil {
+		return Exitf(ExitUsage, "%v", err)
 	}
+
+	profile, err := config.Load(root)
+	if err != nil {
+		return Exitf(ExitUsage, "%v", err)
+	}
+
+	if err := profile.Validate(); err != nil {
+		return Exitf(ExitUsage, "%v", err)
+	}
+
+	v, err := vars.Resolve(root, branch, profile)
+	if err != nil {
+		return Exitf(ExitUsage, "%v", err)
+	}
+
+	store, err := state.Load(root)
+	if err != nil {
+		return Exitf(ExitUsage, "%v", err)
+	}
+
+	if _, ok := store.Worktrees[v.SiteName]; ok {
+		return Exitf(ExitConflict, "worktree %s already exists", v.SiteName)
+	}
+
+	taken := make(map[int]bool)
+	for _, t := range store.Worktrees {
+		taken[t.Port] = true
+	}
+
+	port, err := provision.AllocatePort(profile.Port, v.SiteName, taken)
+	if err != nil {
+		return Exitf(ExitUsage, "%v", err)
+	}
+	v.Port = port
+
+	if err := gitx.WorktreeAdd(root, v.Worktree, branch, true); err != nil {
+		return Exitf(ExitConflict, "%v", err)
+	}
+
+	rec := &state.Record{
+		SiteName:     v.SiteName,
+		Branch:       branch,
+		Path:         v.Worktree,
+		Port:         port,
+		Status:       "provisioning",
+		CreatedAt:    time.Now(),
+		LastActivity: time.Now(),
+	}
+	store.Worktrees[v.SiteName] = rec
+
+	if err = state.Save(root, store); err != nil {
+		return Exitf(ExitRuntime, "%v", err)
+	}
+
+	if err := provisionWorktree(root, v, profile); err != nil {
+		rec.Status = "broken"
+		_ = state.Save(root, store)
+		return Exitf(ExitRuntime, "%v", err)
+	}
+
+	rec.Status = "ready"
+	rec.LastActivity = time.Now()
+	if err := state.Save(root, store); err != nil {
+		return Exitf(ExitRuntime, "%v", err)
+	}
+
+	resultf("%s\n", v.Worktree)
+	return nil
 }
 
 // provisionWorktree runs the copy, env, and setup steps against an already

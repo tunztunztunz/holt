@@ -1,23 +1,16 @@
 package cli
 
-import "github.com/spf13/cobra"
+type Globals struct {
+	DryRun bool `help:"Print the plan; perform no side effects."`
+	Force  bool `help:"Override guard refusals."`
+	JSON   bool `help:"Emit machine-readable JSON on stdout."`
+}
 
-func newRootCmd() *cobra.Command {
-	root := &cobra.Command{
-		Use:           "acre",
-		Short:         "Spin up, manage, and tear down git worktrees",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-	}
+type CLI struct {
+	Globals
 
-	root.PersistentFlags().Bool("dry-run", false, "print the plan; perform no side effects")
-	root.PersistentFlags().Bool("force", false, "override guard refusals")
-	root.PersistentFlags().Bool("json", false, "emit machine-readable JSON on stdout")
-
-	root.AddCommand(newVersionCmd())
-	root.AddCommand(newInitCmd())
-	root.AddCommand(newValidateCmd())
-	root.AddCommand(newNewCmd())
-
-	return root
+	Version  versionCmd  `cmd:"" help:"Print the acre version."`
+	Init     initCmd     `cmd:"" help:"Scaffold acre.yml in the repo root."`
+	Validate validateCmd `cmd:"" help:"Load and validate acre.yml."`
+	New      newCmd      `cmd:"" help:"Create and provision a worktree."`
 }
