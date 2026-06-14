@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/tunztunztunz/acre/internal/config"
+	"github.com/tunztunztunz/holt/internal/config"
 )
 
 func RenderEnv(worktree string, b config.EnvBlock, expand func(string) (string, error)) error {

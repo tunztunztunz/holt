@@ -3,8 +3,8 @@ package cli
 import (
 	"path/filepath"
 
-	"github.com/tunztunztunz/acre/internal/gitx"
-	"github.com/tunztunztunz/acre/internal/state"
+	"github.com/tunztunztunz/holt/internal/gitx"
+	"github.com/tunztunztunz/holt/internal/state"
 )
 
 type CdCmd struct {

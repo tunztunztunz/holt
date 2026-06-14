@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"github.com/tunztunztunz/acre/internal/config"
-	"github.com/tunztunztunz/acre/internal/gitx"
-	"github.com/tunztunztunz/acre/internal/guard"
-	"github.com/tunztunztunz/acre/internal/provision"
-	"github.com/tunztunztunz/acre/internal/state"
-	"github.com/tunztunztunz/acre/internal/vars"
+	"github.com/tunztunztunz/holt/internal/config"
+	"github.com/tunztunztunz/holt/internal/gitx"
+	"github.com/tunztunztunz/holt/internal/guard"
+	"github.com/tunztunztunz/holt/internal/provision"
+	"github.com/tunztunztunz/holt/internal/state"
+	"github.com/tunztunztunz/holt/internal/vars"
 )
 
 type RmCmd struct {
@@ -71,7 +71,7 @@ func (c *RmCmd) Run(root Root, profile *config.Profile, store *state.Store, g *G
 	}
 
 	// If we removed the tree the user was standing in, print the repo root so the
-	// acre() function cds them home; otherwise stdout stays empty.
+	// holt() function cds them home; otherwise stdout stays empty.
 	if inside {
 		resultf("%s\n", repo)
 	} else {

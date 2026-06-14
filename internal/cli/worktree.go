@@ -9,12 +9,12 @@ import (
 
 	"charm.land/huh/v2"
 	"github.com/sahilm/fuzzy"
-	"github.com/tunztunztunz/acre/internal/state"
+	"github.com/tunztunztunz/holt/internal/state"
 )
 
 // resolveWorktree turns a user query into a worktree record. Worktrees are
-// identified by NAME (site_name), never by branch — branches aren't unique to a
-// tree (a detached HEAD, or several trees on one branch). It matches an exact
+// identified by NAME (site_name), never by branch — a tree can sit in detached
+// HEAD with no branch at all, so a branch isn't a reliable handle. It matches an exact
 // name first, then — only when stderr is a TTY — fuzzy-matches and offers a
 // picker; piped/CI callers must pass an exact name.
 func resolveWorktree(query string, recs map[string]*state.Record) (*state.Record, error) {

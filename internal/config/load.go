@@ -9,10 +9,10 @@ import (
 )
 
 func Load(repoRoot string) (*Profile, error) {
-	path := filepath.Join(repoRoot, "acre.yml")
+	path := filepath.Join(repoRoot, "holt.yml")
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("no acre.yml in %s (run: acre init)", repoRoot)
+		return nil, fmt.Errorf("no holt.yml in %s (run: holt init)", repoRoot)
 	}
 	defer func() { _ = f.Close() }()
 
@@ -20,7 +20,7 @@ func Load(repoRoot string) (*Profile, error) {
 	dec := yaml.NewDecoder(f)
 	dec.KnownFields(true)
 	if err := dec.Decode(&p); err != nil {
-		return nil, fmt.Errorf("invalid acre.yml: %w", err)
+		return nil, fmt.Errorf("invalid holt.yml: %w", err)
 	}
 	p.applyDefaults()
 	return &p, nil
@@ -34,7 +34,7 @@ func (p *Profile) applyDefaults() {
 		p.SiteName = "$PROJECT-$TREE"
 	}
 	if p.WorktreesDir == "" {
-		p.WorktreesDir = ".." // sibling layout by default, matching `acre init`
+		p.WorktreesDir = ".." // sibling layout by default, matching `holt init`
 	}
 	if len(p.Guards) == 0 {
 		p.Guards = []string{"uncommitted", "unmerged"}

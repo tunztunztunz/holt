@@ -4,11 +4,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/tunztunztunz/acre/internal/config"
-	"github.com/tunztunztunz/acre/internal/gitx"
-	"github.com/tunztunztunz/acre/internal/provision"
-	"github.com/tunztunztunz/acre/internal/state"
-	"github.com/tunztunztunz/acre/internal/vars"
+	"github.com/tunztunztunz/holt/internal/config"
+	"github.com/tunztunztunz/holt/internal/gitx"
+	"github.com/tunztunztunz/holt/internal/provision"
+	"github.com/tunztunztunz/holt/internal/state"
+	"github.com/tunztunztunz/holt/internal/vars"
 )
 
 type newCmd struct {

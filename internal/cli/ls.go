@@ -8,10 +8,10 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
-	"github.com/tunztunztunz/acre/internal/config"
-	"github.com/tunztunztunz/acre/internal/gitx"
-	"github.com/tunztunztunz/acre/internal/state"
-	"github.com/tunztunztunz/acre/internal/ui"
+	"github.com/tunztunztunz/holt/internal/config"
+	"github.com/tunztunztunz/holt/internal/gitx"
+	"github.com/tunztunztunz/holt/internal/state"
+	"github.com/tunztunztunz/holt/internal/ui"
 )
 
 type lsRow struct {

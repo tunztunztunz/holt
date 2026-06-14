@@ -10,7 +10,7 @@ import (
 func Execute() {
 	var cli CLI
 	kctx := kong.Parse(&cli,
-		kong.Name("acre"),
+		kong.Name("holt"),
 		kong.Description("Spin up, manage, and tear down git worktrees."),
 		kong.BindToProvider(provideRoot),
 		kong.BindToProvider(provideProfile),

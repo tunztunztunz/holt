@@ -3,9 +3,9 @@ package cli
 import (
 	"path/filepath"
 
-	"github.com/tunztunztunz/acre/internal/config"
-	"github.com/tunztunztunz/acre/internal/gitx"
-	"github.com/tunztunztunz/acre/internal/state"
+	"github.com/tunztunztunz/holt/internal/config"
+	"github.com/tunztunztunz/holt/internal/gitx"
+	"github.com/tunztunztunz/holt/internal/state"
 )
 
 // Root is the repository root path. It's a named type so Kong can inject it
@@ -25,7 +25,7 @@ func provideRoot() (Root, error) {
 	return Root(root), nil
 }
 
-// provideProfile is the single place acre reads acre.yml. It needs the root, so
+// provideProfile is the single place holt reads holt.yml. It needs the root, so
 // it just calls provideRoot itself.
 func provideProfile() (*config.Profile, error) {
 	root, err := provideRoot()

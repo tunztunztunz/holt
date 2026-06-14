@@ -28,7 +28,7 @@ type Store struct {
 }
 
 func dir(repoRoot string) string {
-	return filepath.Join(repoRoot, ".acre")
+	return filepath.Join(repoRoot, ".holt")
 }
 
 func file(repoRoot string) string {

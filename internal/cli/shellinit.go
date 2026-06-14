@@ -1,55 +1,55 @@
 package cli
 
-// zshBashInit shadows the `acre` binary with a function. `acre new X`, `acre cd
-// X`, and `acre rm here` print a path the real binary emits on stdout; the
+// zshBashInit shadows the `holt` binary with a function. `holt new X`, `holt cd
+// X`, and `holt rm here` print a path the real binary emits on stdout; the
 // function captures it and `cd`s there (rm only when it removed the cwd's tree,
 // so the path may be empty). Provisioning output goes to stderr, so it still
 // streams live while stdout stays the clean path. Everything else passes through
-// to `command acre`. Works in both bash and zsh.
-const zshBashInit = `acre() {
+// to `command holt`. Works in both bash and zsh.
+const zshBashInit = `holt() {
 	case "$1" in
 	new)
 		local dir
-		dir="$(command acre new "${@:2}")" || return $?
+		dir="$(command holt new "${@:2}")" || return $?
 		builtin cd "$dir" ;;
 	cd)
 		local dir
-		dir="$(command acre cd "${@:2}")" || return $?
+		dir="$(command holt cd "${@:2}")" || return $?
 		builtin cd "$dir" ;;
 	rm)
 		local dir
-		dir="$(command acre rm "${@:2}")" || return $?
+		dir="$(command holt rm "${@:2}")" || return $?
 		[ -n "$dir" ] && builtin cd "$dir" ;;
 	*)
-		command acre "$@" ;;
+		command holt "$@" ;;
 	esac
 }`
 
 // Completions are hand-emitted. The subcommand list is static; the worktree names for
-// `cd`/`rm` are dynamic, pulled from `acre ls --porcelain` (first column) so
+// `cd`/`rm` are dynamic, pulled from `holt ls --porcelain` (first column) so
 // they always match the live, reconciled set. Keep the static list in sync with
 // the commands on root.go's CLI struct.
 
-const bashCompletion = `_acre() {
+const bashCompletion = `_holt() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=($(compgen -W "version init validate new ls cd rm" -- "$cur"))
   elif [ "${COMP_WORDS[1]}" = "cd" ] || [ "${COMP_WORDS[1]}" = "rm" ]; then
-    COMPREPLY=($(compgen -W "$(command acre ls --porcelain | cut -f1)" -- "$cur"))
+    COMPREPLY=($(compgen -W "$(command holt ls --porcelain | cut -f1)" -- "$cur"))
   fi
 }
-complete -F _acre acre`
+complete -F _holt holt`
 
-const zshCompletion = `_acre() {
+const zshCompletion = `_holt() {
   if (( CURRENT == 2 )); then
     compadd version init validate new ls cd rm
   elif [[ "$words[2]" == (cd|rm) ]]; then
-    compadd -- ${(f)"$(command acre ls --porcelain | cut -f1)"}
+    compadd -- ${(f)"$(command holt ls --porcelain | cut -f1)"}
   fi
 }
-compdef _acre acre`
+compdef _holt holt`
 
-// ShellInitCmd is `acre shell-init <bash|zsh|fish>`. The `enum` tag makes Kong
+// ShellInitCmd is `holt shell-init <bash|zsh|fish>`. The `enum` tag makes Kong
 // reject an unknown shell at parse time with a usage error — no manual default
 // case needed.
 type ShellInitCmd struct {

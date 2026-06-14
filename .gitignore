@@ -1,8 +1,8 @@
 # Built binary
-/acre
+/holt
 
-# Local acre runtime state (per-machine worktree tracking)
-/.acre/
+# Local holt runtime state (per-machine worktree tracking)
+/.holt/
 
 # Environment files (keep the example)
 .env
@@ -12,3 +12,7 @@
 # macOS
 .DS_Store
 /.idea/inspectionProfiles/Project_Default.xml
+
+# JetBrains
+*.iml
+*.idea

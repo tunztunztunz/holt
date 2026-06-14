@@ -10,9 +10,9 @@ type CLI struct {
 	Globals
 
 	ShellInit ShellInitCmd `cmd:"" help:"Print shell integration (eval in your rc file)."`
-	Version   versionCmd   `cmd:"" help:"Print the acre version."`
-	Init      initCmd      `cmd:"" help:"Scaffold acre.yml in the repo root."`
-	Validate  validateCmd  `cmd:"" help:"Load and validate acre.yml."`
+	Version   versionCmd   `cmd:"" help:"Print the holt version."`
+	Init      initCmd      `cmd:"" help:"Scaffold holt.yml in the repo root."`
+	Validate  validateCmd  `cmd:"" help:"Load and validate holt.yml."`
 	New       newCmd       `cmd:"" help:"Create and provision a worktree."`
 	Ls        LsCmd        `cmd:"" help:"List worktrees with status."`
 	Cd        CdCmd        `cmd:"" help:"Print a worktree's path (for shell cd)."`

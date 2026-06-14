@@ -1,6 +1,6 @@
 package guard
 
-import "github.com/tunztunztunz/acre/internal/gitx"
+import "github.com/tunztunztunz/holt/internal/gitx"
 
 type Guard interface {
 	Name() string

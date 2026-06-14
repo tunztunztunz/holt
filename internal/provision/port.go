@@ -5,7 +5,7 @@ import (
 	"hash/fnv"
 	"net"
 
-	"github.com/tunztunztunz/acre/internal/config"
+	"github.com/tunztunztunz/holt/internal/config"
 )
 
 func AllocatePort(p *config.PortBlock, siteName string, taken map[int]bool) (int, error) {

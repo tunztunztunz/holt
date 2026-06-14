@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/tunztunztunz/acre/internal/config"
+	"github.com/tunztunztunz/holt/internal/config"
 )
 
 var slugRe = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
