@@ -103,6 +103,19 @@ func pickTarget(arg string, store *state.Store, prompt string) (*state.Record, e
 		if len(all) == 0 {
 			return nil, Exitf(ExitNotFound, "no worktrees")
 		}
+		slices.SortFunc(all, func(a, b *state.Record) int {
+			// Pin the main worktree to the top (cd injects it as "main"); order
+			// the rest most-recent-first, like ls. rm's store has no main record,
+			// so it just gets the recency sort.
+			switch {
+			case a.Status == "main":
+				return -1
+			case b.Status == "main":
+				return 1
+			default:
+				return b.LastActivity.Compare(a.LastActivity)
+			}
+		})
 		return pick(prompt, all)
 	default:
 		return resolveWorktree(arg, store.Worktrees)

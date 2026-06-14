@@ -21,9 +21,6 @@ func (c *RmCmd) Run(root Root, profile *config.Profile, store *state.Store, g *G
 		return err
 	}
 
-	// If we're standing inside the target we can't delete it out from under the
-	// shell. Instead, we can print the repo root at the end and let the acre() shell
-	// cd us home (same trick as cd).
 	inside := isInside(rec.Path)
 
 	def := gitx.DefaultBranch()
