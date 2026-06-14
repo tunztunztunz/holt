@@ -1,17 +1,13 @@
 # holt
 
-A small CLI for working with git worktrees without the busywork.
+A small CLI that makes git worktrees painless.
 
-Git worktrees let you check out several branches at once, each in its own
-directory, all backed by a single clone. That's great for jumping between a
-feature, a hotfix, and a review without stashing or rebuilding. The catch is
-that every new worktree needs the same setup your main checkout has: copied env
-files, installed dependencies, a fresh database, a local domain, and so on. And
-when you're done, you have to tear all of that back down.
-
-holt handles that part. You describe your project once in a `holt.yml`, and
-then `holt new` spins up a fully provisioned worktree and drops you into it,
-while `holt rm` cleans it up and walks you back home.
+Worktrees let you check out several branches at once, each in its own directory.
+The catch is that every new one needs the same setup as your main checkout (env
+files, dependencies, a database, a local domain) plus a teardown when you're
+done. holt handles that: describe the project once in a `holt.yml`, and `holt
+new` spins up a fully provisioned worktree and drops you in, while `holt rm`
+tears it down and walks you home.
 
 ## How it works
 
@@ -25,6 +21,25 @@ Worktrees are identified by name (the site name), not by branch. Git only lets a
 branch be checked out in one worktree at a time, and a tree can also sit in
 detached HEAD with no branch at all, so the branch isn't a reliable handle. The
 name always is.
+
+### Sensible defaults
+
+The scaffolded `holt.yml` is set up to follow git-worktree conventions out of
+the box, so you can run `holt new` without touching the config first:
+
+- **Sibling layout.** `worktrees_dir: ..` puts each tree next to the repo at
+  `../<repo>-<branch>`, instead of nesting them inside it. This is the layout the
+  [git-worktree best practices guide](https://www.gitworktree.org/guides/best-practices)
+  recommends: trees stay out of the repo so your tooling, ignore rules, and file
+  watchers don't trip over them, and everything for a project lives side by side.
+- **Predictable names.** `site_name: $PROJECT-$TREE` names each tree after the
+  repo and branch, so the directory, the site name, and the `holt ls` entry all
+  match.
+- **Base branch.** Unset by default, which means trees compare against the repo's
+  default branch (`origin/HEAD`). Set `base` when you fork from something else,
+  like `development`.
+- **Safety on by default.** The `uncommitted` and `unmerged` guards are enabled,
+  so `holt rm` warns before it can drop work you haven't saved or merged.
 
 ## Install
 
@@ -175,28 +190,27 @@ copy:
 # Large, branch-invariant directories to symlink instead of copy.
 link:
   - node_modules
-  - vendor
 
 # Rewrite per-worktree values into a dotenv file so trees don't collide.
 env:
   - file: .env
     set:
-      APP_URL: http://$SITE_NAME.test
       PORT: $PORT
+      BASE_URL: http://localhost:$PORT
 
 # Allocate a unique port per worktree, exposed as $PORT.
 port:
-  range: [4000, 4999]
+  range: [3000, 3999]
 
 # Commands run in each new worktree on 'holt new', in order.
 setup:
-  - composer install
+  - go mod download
   - npm install
-  - php artisan migrate:fresh --seed
+  - docker compose -p $SITE_NAME up -d
 
 # Commands run in a worktree on 'holt rm', before removal.
 teardown:
-  - herd unlink $SITE_NAME
+  - docker compose -p $SITE_NAME down
 
 # Warn and confirm before destructive actions.
 guards:
@@ -206,12 +220,27 @@ guards:
 
 ### Variables
 
-You can use these in `site_name`, `env`, and your setup and teardown commands:
+You can use these in `site_name`, `env`, and your setup and teardown commands.
+Say your repo lives at `/Users/you/dev/acme`, you run `holt new feature/login`,
+and the `port` block hands out `3000`. The variables then resolve to:
 
-- `$PROJECT` is the repo name.
-- `$TREE` is the branch, made filesystem-safe.
-- `$SITE_NAME` is the resolved site name.
-- `$PORT` is the allocated port, if you defined a `port` block.
+| Variable      | Example value                          | What it is                                          |
+| ------------- | -------------------------------------- | --------------------------------------------------- |
+| `$REPO_ROOT`  | `/Users/you/dev/acme`                  | Absolute path to the main repo.                     |
+| `$PROJECT`    | `acme`                                 | The repo's directory name.                          |
+| `$BRANCH`     | `feature/login`                        | The branch, exactly as you typed it.                |
+| `$TREE`       | `feature-login`                        | The branch made filesystem-safe (`/` becomes `-`).  |
+| `$SITE_NAME`  | `acme-feature-login`                   | The resolved site name (`$PROJECT-$TREE` default).  |
+| `$WORKTREE`   | `/Users/you/dev/acme-feature-login`    | Absolute path to the new worktree.                  |
+| `$PORT`       | `3000`                                 | The allocated port (only if a `port` block is set). |
+
+So with the `env` block shown above, the worktree's `.env` would be written
+with the values filled in:
+
+```sh
+PORT=3000
+BASE_URL=http://localhost:3000
+```
 
 ### Guards
 
