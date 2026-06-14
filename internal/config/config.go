@@ -4,6 +4,7 @@ type Profile struct {
 	Version      int        `yaml:"version"`
 	SiteName     string     `yaml:"site_name"`
 	WorktreesDir string     `yaml:"worktrees_dir"`
+	Base         string     `yaml:"base"` // branch new worktrees fork from; "" = repo default (origin/HEAD)
 	Copy         []string   `yaml:"copy"`
 	Link         []string   `yaml:"link"`
 	Env          []EnvBlock `yaml:"env"`

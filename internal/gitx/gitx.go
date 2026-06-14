@@ -75,7 +75,16 @@ func DefaultBranch() string {
 	if err != nil {
 		return "main"
 	}
-	return strings.TrimPrefix(ref, "ref/remotes/origin/")
+	return strings.TrimPrefix(ref, "refs/remotes/origin/")
+}
+
+// CurrentBranch returns the branch checked out in dir, or "" if HEAD is detached.
+func CurrentBranch(dir string) string {
+	ref, err := run("", "-C", dir, "symbolic-ref", "--short", "-q", "HEAD")
+	if err != nil {
+		return ""
+	}
+	return ref
 }
 
 // LogRange LogRange returns commits in `to` not in `from` (`from..to`); empty == none.

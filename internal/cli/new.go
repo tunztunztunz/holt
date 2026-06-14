@@ -49,6 +49,7 @@ func (c *newCmd) Run(root Root, profile *config.Profile, store *state.Store) err
 	rec := &state.Record{
 		SiteName:     v.SiteName,
 		Branch:       c.Branch,
+		BaseBranch:   gitx.CurrentBranch(repo),
 		Path:         v.Worktree,
 		Port:         port,
 		Status:       "provisioning",

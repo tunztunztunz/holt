@@ -19,7 +19,7 @@ type uncommitted struct{}
 
 func (uncommitted) Name() string { return "uncommitted" }
 func (uncommitted) Check(worktree, branch, defaultBranch string) (string, error) {
-	st, err := gitx.WorktreeStatus(worktree)
+	st, err := gitx.WorktreeStatus(worktree, defaultBranch)
 	if err != nil {
 		return "", err
 	}

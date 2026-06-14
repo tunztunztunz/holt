@@ -8,6 +8,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/tunztunztunz/acre/internal/config"
 	"github.com/tunztunztunz/acre/internal/gitx"
 	"github.com/tunztunztunz/acre/internal/state"
 	"github.com/tunztunztunz/acre/internal/ui"
@@ -27,8 +28,8 @@ type LsCmd struct {
 	Porcelain bool `help:"Stable tab-separated output for scripts."`
 }
 
-func (c *LsCmd) Run(store *state.Store, g *Globals) error {
-	rows := buildRows(store.Worktrees)
+func (c *LsCmd) Run(profile *config.Profile, store *state.Store, g *Globals) error {
+	rows := buildRows(store.Worktrees, profile.Base)
 
 	if g.JSON {
 		return emitJSON("ls", rows)
@@ -39,10 +40,21 @@ func (c *LsCmd) Run(store *state.Store, g *Globals) error {
 	return emitTable(rows)
 }
 
-func buildRows(recs map[string]*state.Record) []lsRow {
+// buildRows resolves each worktree's base branch in layers this is the fork point
+// recorded at creation, else the profile's configured base, else the repo
+// default. It reports git status (ahead/behind) against it.
+func buildRows(recs map[string]*state.Record, cfgBase string) []lsRow {
+	def := gitx.DefaultBranch()
 	rows := make([]lsRow, 0, len(recs))
 	for _, r := range recs {
-		gs, _ := gitx.WorktreeStatus(r.Path)
+		base := r.BaseBranch
+		if base == "" {
+			base = cfgBase
+		}
+		if base == "" {
+			base = def
+		}
+		gs, _ := gitx.WorktreeStatus(r.Path, base)
 		rows = append(rows, lsRow{
 			Name:         r.SiteName,
 			Branch:       r.Branch,

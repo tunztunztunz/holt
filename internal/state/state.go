@@ -10,6 +10,7 @@ import (
 type Record struct {
 	SiteName     string            `json:"site_name"`
 	Branch       string            `json:"branch"`
+	BaseBranch   string            `json:"base_branch,omitempty"`
 	Path         string            `json:"path"`
 	Status       string            `json:"status"`
 	Port         int               `json:"port"`
