@@ -1,16 +1,23 @@
 package cli
 
-// zshBashInit shadows the `acre` binary with a function: `acre cd X` captures
-// the path the real binary prints and `cd`s to it; anything else passes through
-// to `command acre`. Works in both bash and zsh.
+// zshBashInit shadows the `acre` binary with a function. `acre cd X` and
+// `acre rm here` print a path the real binary emits on stdout; the function
+// captures it and `cd`s there (rm only when it removed the cwd's tree, so the
+// path may be empty). Everything else passes through to `command acre`. Works
+// in both bash and zsh.
 const zshBashInit = `acre() {
-	if [ "$1" = "cd" ]; then
+	case "$1" in
+	cd)
 		local dir
 		dir="$(command acre cd "${@:2}")" || return $?
-		builtin cd "$dir"
-	else
-		command acre "$@"
-	fi
+		builtin cd "$dir" ;;
+	rm)
+		local dir
+		dir="$(command acre rm "${@:2}")" || return $?
+		[ -n "$dir" ] && builtin cd "$dir" ;;
+	*)
+		command acre "$@" ;;
+	esac
 }`
 
 // Completions are hand-emitted. The subcommand list is static; the worktree names for

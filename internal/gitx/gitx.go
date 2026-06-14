@@ -59,6 +59,60 @@ func WorktreeAdd(repoRoot, path, branch string, newBranch bool) error {
 	return err
 }
 
+// RepoRoot returns the main worktree path, from anywhere inside the repo.
+func RepoRoot() (string, error) {
+	common, err := run("", "rev-parse", "--path-format=absolute", "--git-common-dir")
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Dir(common), nil
+}
+
+// DefaultBranch returns the repo's default branch (origin/HEAD), or "main".
+func DefaultBranch() string {
+	ref, err := run("", "symbolic-ref", "refs/remotes/origin/HEAD")
+	if err != nil {
+		return "main"
+	}
+	return strings.TrimPrefix(ref, "ref/remotes/origin/")
+}
+
+// LogRange LogRange returns commits in `to` not in `from` (`from..to`); empty == none.
+// Runs inside the worktree, like WorktreeStatus.
+func LogRange(worktree, from, to string) (string, error) {
+	return run(worktree, "log", "--oneline", from+".."+to)
+}
+
+// WorktreeRemove runs `git worktree remove [--force] <path>` from the repo.
+func WorktreeRemove(repoRoot, path string, force bool) error {
+	args := []string{"-C", repoRoot, "worktree", "remove", path}
+	if force {
+		args = append(args, "--force")
+	}
+	_, err := run("", args...)
+	return err
+}
+
+// WorktreePrune drops administrative files for worktrees removed from disk.
+func WorktreePrune(repoRoot string) error {
+	_, err := run("", "-C", repoRoot, "worktree", "prune")
+	return err
+}
+
+// BranchDelete force-deletes a branch (`branch -D`).
+func BranchDelete(repoRoot, branch string) error {
+	_, err := run("", "-C", repoRoot, "branch", "-D", branch)
+	return err
+}
+
+// StashList returns the repo's stash entries ("" == none). Stashes are
+// repo-global (refs/stash), so this is the same list from any worktree.
+// It warns whenever the repo has any stash, not just this branch's.
+func StashList(worktree string) (string, error) {
+	return run(worktree, "stash", "list")
+}
+
 func run(dir string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
@@ -70,14 +124,4 @@ func run(dir string, args ...string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(out)), nil
-}
-
-// RepoRoot returns the main worktree path, from anywhere inside the repo.
-func RepoRoot() (string, error) {
-	common, err := run("", "rev-parse", "--path-format=absolute", "--git-common-dir")
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Dir(common), nil
 }
