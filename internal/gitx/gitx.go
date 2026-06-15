@@ -170,6 +170,24 @@ func BranchDelete(repoRoot, branch string) error {
 	return err
 }
 
+// LocalBranches returns the repo's local branch names.
+func LocalBranches(repoRoot string) ([]string, error) {
+	out, err := run("", "-C", repoRoot, "for-each-ref", "--format=%(refname:short)", "refs/heads")
+	if err != nil {
+		return nil, err
+	}
+	if out == "" {
+		return nil, nil
+	}
+	return strings.Split(out, "\n"), nil
+}
+
+// BranchExists reports whether a local branch with the given name exists.
+func BranchExists(repoRoot, branch string) bool {
+	_, code, err := runCode("", "-C", repoRoot, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
+	return err == nil && code == 0
+}
+
 // StashList returns the repo's stash entries ("" == none). Stashes are
 // repo-global (refs/stash), so this is the same list from any worktree.
 // It warns whenever the repo has any stash, not just this branch's.
