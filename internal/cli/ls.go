@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"charm.land/lipgloss/v2"
-	"charm.land/lipgloss/v2/table"
 	"github.com/tunztunztunz/holt/internal/config"
 	"github.com/tunztunztunz/holt/internal/gitx"
 	"github.com/tunztunztunz/holt/internal/state"
@@ -24,6 +22,10 @@ type lsRow struct {
 	LastActivity time.Time   `json:"last_activity"`
 }
 
+// LsCmd lists worktrees with their resolved base branch and git status
+// (dirty/ahead/behind), most-recently-active first. Output is a human table by
+// default, --json for structured output, or --porcelain for stable
+// tab-separated lines.
 type LsCmd struct {
 	Porcelain bool `help:"Stable tab-separated output for scripts."`
 }
@@ -75,16 +77,7 @@ func buildRows(recs map[string]*state.Record, cfgBase string) []lsRow {
 
 // emitTable renders the human-facing table to stdout — this is the command result.
 func emitTable(rows []lsRow) error {
-	t := table.New().
-		Border(lipgloss.RoundedBorder()).
-		BorderStyle(ui.TableBorder).
-		Headers("NAME", "BRANCH", "PORT", "GIT", "LAST", "STATUS").
-		StyleFunc(func(row, _ int) lipgloss.Style {
-			if row == table.HeaderRow {
-				return ui.TableHeader
-			}
-			return ui.TableCell
-		})
+	t := ui.Table("NAME", "BRANCH", "PORT", "GIT", "LAST", "STATUS")
 
 	for _, r := range rows {
 		t.Row(

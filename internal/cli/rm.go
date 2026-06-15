@@ -9,6 +9,10 @@ import (
 	"github.com/tunztunztunz/holt/internal/vars"
 )
 
+// RmCmd removes a worktree: it runs the configured guards (which warn + confirm,
+// or abort unless --force), runs teardown commands, removes the worktree and its
+// branch, and drops it from state. If the user is standing in the tree being
+// removed, it prints the repo root so the holt() shell wrapper cds them home.
 type RmCmd struct {
 	Name string `arg:"" optional:"" help:"Worktree to remove. Omit to pick from all; 'here' = the current tree."`
 }
