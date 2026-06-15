@@ -11,8 +11,7 @@
 
 # macOS
 .DS_Store
-/.idea/inspectionProfiles/Project_Default.xml
 
 # JetBrains
 *.iml
-*.idea
+.idea/
