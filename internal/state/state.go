@@ -55,6 +55,10 @@ func Load(repoRoot string) (*Store, error) {
 	return &s, nil
 }
 
+// Save writes the store via a temp file + rename, so a reader never sees a
+// half-written file. There's no lock: two concurrent holt runs do an
+// unsynchronized read-modify-write, so the last to save wins and can drop the
+// other's record. Acceptable for a single-user dev tool.
 func Save(repoRoot string, s *Store) error {
 	if err := os.MkdirAll(dir(repoRoot), 0o755); err != nil {
 		return err
