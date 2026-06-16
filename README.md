@@ -62,12 +62,12 @@ go install github.com/tunztunztunz/holt@latest
 That puts the `holt` binary in `$(go env GOPATH)/bin`, so make sure that's on
 your `PATH`.
 
-### Shell integration (required for new, cd, and rm)
+### Shell integration (required for new, cd, rm, and harvest)
 
 A program can't change the working directory of the shell that launched it. So
-`holt new`, `holt cd`, and `holt rm here` print a path, and a small shell
-function captures that path and does the `cd` for you. Without this step those
-commands still work, they just won't move you.
+`holt new`, `holt cd`, `holt rm here`, and `holt harvest` print a path, and a
+small shell function captures that path and does the `cd` for you. Without this
+step those commands still work, they just won't move you.
 
 Add this to your `~/.zshrc` (or `~/.bashrc`), after whatever line puts Go's bin
 directory on your `PATH`:
@@ -87,13 +87,15 @@ the old function in memory. Just open a new tab and you'll have the latest.
 
 ```sh
 cd your-project
-holt init            # writes a starter holt.yml, edit it to taste
-holt validate        # sanity-check the config
-holt new feature-x   # create, provision, and jump into ../your-project-feature-x
+holt init             # writes a starter holt.yml, edit it to taste
+holt validate         # sanity-check the config
+holt new feature-x    # create (or attach) a branch, provision, and jump in
+holt new              # or pick from your local branches interactively
 # ... do your work ...
-holt ls              # see all your trees and how they stack up
-holt cd              # pick a tree to jump to (main is pinned at the top)
-holt rm here         # tear down the current tree and head home
+holt ls               # see all your trees and how they stack up
+holt cd               # pick a tree to jump to (main is pinned at the top)
+holt harvest a b --into combined  # merge several trees into one integration tree
+holt rm here          # tear down the current tree and head home
 ```
 
 ## Commands
@@ -109,14 +111,18 @@ you to uncomment. Use `--force` to overwrite an existing file.
 Loads `holt.yml` and checks it over. Run this after editing the config to catch
 problems before they bite you mid-provision.
 
-### `holt new <branch>`
+### `holt new [branch]`
 
-Creates a new branch and a worktree for it, then provisions the tree by running
-everything in your config: copying files, linking directories, rendering env
-files, allocating a port, and running your setup commands in order. When it
-finishes, the shell function drops you into the new directory. Provisioning
-output streams to your terminal as it goes; if anything fails, holt marks the
-tree broken and leaves you where you are so you can look into it.
+Creates a worktree for a branch and provisions it. If the branch already exists
+locally, holt attaches it; otherwise it creates the branch off your current
+HEAD. Leave the branch off and holt shows a picker of local branches not already
+checked out in a worktree, with a "new branch" entry to create one instead.
+
+Provisioning runs everything in your config: copying files, linking directories,
+rendering env files, allocating a port, and running your setup commands in
+order. When it finishes, the shell function drops you into the new directory.
+Provisioning output streams to your terminal as it goes; if anything fails, holt
+marks the tree broken and leaves you where you are so you can look into it.
 
 The branch holt forks from is recorded at creation, which is what `ls` uses to
 tell you how far behind that branch you've fallen.
@@ -146,6 +152,24 @@ you're standing in. When you remove the tree you're inside, holt walks you back
 to the repo root afterward so you're not stranded in a deleted directory.
 
 Before anything destructive, the configured guards have their say (see below).
+
+### `holt harvest [trees...] --into <branch>`
+
+Integrates several worktrees back together — the join that pairs with `new`'s
+fork. Pass the trees to merge in order (or leave them off to pick from a list),
+and name the integration branch with `--into`. holt forecasts the merges first
+with `git merge-tree`, entirely in memory, and reports which are clean. Unless
+`--dry-run`, it then creates a worktree on the integration branch off the shared
+base, merges each tree in order with a real merge commit, provisions the result,
+and drops you in.
+
+The base is resolved from the selected trees' recorded fork points; if they
+disagree, holt refuses and shows a table so you can pick one with `--base`.
+Merges stop at the first conflict, leaving the clean prefix already committed —
+resolve the conflict in the integration tree, commit, then re-run `holt harvest`
+with the remaining trees, and they're merged into the same tree. If `--into`
+names a tree that already exists, holt merges into it rather than recreating it.
+Pass `--no-provision` for a merged-but-not-provisioned tree.
 
 ### `holt shell-init <bash|zsh|fish>`
 
