@@ -27,18 +27,11 @@ func (c *RmCmd) Run(root Root, profile *config.Profile, store *state.Store, g *G
 
 	inside := isInside(rec.Path)
 
-	// Guards compare against the tree's own base: its recorded fork point, else
-	// the configured base, else the repo default. Using the repo default outright
-	// would report "not in main" for a tree forked off another branch.
-	base := rec.BaseBranch
-	if base == "" {
-		base = profile.Base
-	}
-	if base == "" {
-		base = gitx.DefaultBranch()
-	}
+	base := baseFor(rec.BaseBranch, profile)
 
-	// Guards
+	// Guards compare against the tree's own base (recorded fork point → configured
+	// base → repo default); the repo default outright would report "not in main"
+	// for a tree forked off another branch.
 	for _, name := range profile.Guards {
 		gd, ok := guard.Registry[name]
 		if !ok {

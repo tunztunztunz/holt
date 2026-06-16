@@ -31,7 +31,7 @@ type LsCmd struct {
 }
 
 func (c *LsCmd) Run(profile *config.Profile, store *state.Store, g *Globals) error {
-	rows := buildRows(store.Worktrees, profile.Base)
+	rows := buildRows(store.Worktrees, profile)
 
 	if g.JSON {
 		return emitJSON("ls", rows)
@@ -42,21 +42,12 @@ func (c *LsCmd) Run(profile *config.Profile, store *state.Store, g *Globals) err
 	return emitTable(rows)
 }
 
-// buildRows resolves each worktree's base branch in layers this is the fork point
-// recorded at creation, else the profile's configured base, else the repo
-// default. It reports git status (ahead/behind) against it.
-func buildRows(recs map[string]*state.Record, cfgBase string) []lsRow {
-	def := gitx.DefaultBranch()
+// buildRows resolves each worktree's base branch (via baseFor) and reports its
+// git status (ahead/behind) against it.
+func buildRows(recs map[string]*state.Record, profile *config.Profile) []lsRow {
 	rows := make([]lsRow, 0, len(recs))
 	for _, r := range recs {
-		base := r.BaseBranch
-		if base == "" {
-			base = cfgBase
-		}
-		if base == "" {
-			base = def
-		}
-		gs, _ := gitx.WorktreeStatus(r.Path, base)
+		gs, _ := gitx.WorktreeStatus(r.Path, baseFor(r.BaseBranch, profile))
 		rows = append(rows, lsRow{
 			Name:         r.SiteName,
 			Branch:       r.Branch,
