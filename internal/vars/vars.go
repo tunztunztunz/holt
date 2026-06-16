@@ -68,10 +68,17 @@ func (v *Vars) pairs() []kv {
 // Expand substitutes $VAR / ${VAR} references in tmpl, returning an error
 // if any referenced variable is undefined.
 func (v *Vars) Expand(tmpl string) (string, error) {
-	var missing string
+	// Built per call, not cached on Vars: some vars are assigned after Resolve, so the
+	// table has to reflect the current values each time Expand runs.
+	pairs := v.pairs()
+	vals := make(map[string]string, len(pairs))
+	for _, p := range pairs {
+		vals[p.name] = p.value
+	}
 
+	var missing string
 	out := os.Expand(tmpl, func(key string) string {
-		val, ok := v.lookup(key)
+		val, ok := vals[key]
 		if !ok {
 			missing = key
 		}
@@ -93,15 +100,6 @@ func (v *Vars) Environ() []string {
 		env[i] = p.name + "=" + p.value
 	}
 	return env
-}
-
-func (v *Vars) lookup(name string) (string, bool) {
-	for _, p := range v.pairs() {
-		if p.name == name {
-			return p.value, true
-		}
-	}
-	return "", false
 }
 
 func isValidSlug(s string) bool { return slugRe.MatchString(s) }
