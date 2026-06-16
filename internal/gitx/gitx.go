@@ -217,7 +217,10 @@ func run(dir string, args ...string) (string, error) {
 		return "", err
 	}
 	if code != 0 {
-		return "", fmt.Errorf("%s", strings.TrimSpace(stderr))
+		if msg := strings.TrimSpace(stderr); msg != "" {
+			return "", fmt.Errorf("%s", msg)
+		}
+		return "", fmt.Errorf("git failed (exit %d)", code) // some failures write nothing to stderr
 	}
 	return strings.TrimSpace(out), nil
 }
