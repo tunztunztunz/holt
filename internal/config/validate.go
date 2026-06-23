@@ -12,6 +12,8 @@ var knownGuards = map[string]bool{
 	"stashes":     true,
 }
 
+// Validate checks the profile for problems that would break a provision run,
+// returning the first one found.
 func (p *Profile) Validate() error {
 	if p.Port != nil {
 		lo, hi := p.Port.Range[0], p.Port.Range[1]
