@@ -126,7 +126,11 @@ func MergeTree(repoRoot, ours, theirs string) (tree string, conflicts []string, 
 		// Line 0 is the merged tree OID; then the conflicted file names, one per
 		// line, terminated by a blank line. Everything after the blank is human
 		// chatter (Auto-merging…, CONFLICT (add/add):…) — stop there.
-		lines := strings.Split(strings.TrimSpace(out), "\n")
+		trimmed := strings.TrimSpace(out)
+		if trimmed == "" {
+			return "", nil, fmt.Errorf("merge-tree reported a conflict but wrote no tree")
+		}
+		lines := strings.Split(trimmed, "\n")
 		tree = strings.TrimSpace(lines[0])
 		for _, ln := range lines[1:] {
 			if strings.TrimSpace(ln) == "" {
