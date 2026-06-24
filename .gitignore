@@ -15,3 +15,6 @@
 # JetBrains
 *.iml
 .idea/
+
+# Personal Claude settings
+settings.local.json
