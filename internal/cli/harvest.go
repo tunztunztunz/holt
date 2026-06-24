@@ -60,9 +60,16 @@ func (c *HarvestCmd) Run(root Root, profile *config.Profile, store *state.Store,
 	// new trees onto its own HEAD; a fresh one is created off the selection's base.
 	base := intBranch
 	if !exists {
+		// We create intBranch fresh (worktree add -b), so refuse early if the
+		// branch name is already taken — otherwise git fails mid-run with raw text.
+		if gitx.BranchExists(repo, intBranch) {
+			return Exitf(ExitConflict, "branch %q already exists; pass a different --into name", intBranch)
+		}
 		if base, err = baseForSelection(recs, c.Base); err != nil {
 			return err
 		}
+	} else if c.Provision {
+		infof("reusing integration tree %s as-is (not re-provisioning)", v.SiteName)
 	}
 
 	plan, err := planHarvest(repo, base, recs)
