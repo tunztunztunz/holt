@@ -1,25 +1,26 @@
 package cli
 
-// zshBashInit shadows the `holt` binary with a function. `holt new X`, `holt cd
-// X`, and `holt rm here` print a path the real binary emits on stdout; the
-// function captures it and `cd`s there (rm only when it removed the cwd's tree,
-// so the path may be empty). Provisioning output goes to stderr, so it still
-// streams live while stdout stays the clean path. Everything else passes through
-// to `command holt`. Works in both bash and zsh.
+// zshBashInit shadows the `holt` binary with a function. `new`, `cd`, `rm`, and
+// `harvest` can emit a worktree path on stdout for the shell to cd into; the
+// function captures stdout and, only if it's a real directory, cds there.
+// Anything else on stdout (e.g. `--help`) is printed through rather than treated
+// as a path, and a non-zero exit passes the captured output and status straight
+// back. Human output — prompts, plans, provisioning — goes to stderr, so it
+// streams live regardless. Works in both bash and zsh.
 const zshBashInit = `holt() {
 	case "$1" in
-	new)
-		local dir
-		dir="$(command holt new "${@:2}")" || return $?
-		builtin cd "$dir" ;;
-	cd)
-		local dir
-		dir="$(command holt cd "${@:2}")" || return $?
-		builtin cd "$dir" ;;
-	rm)
-		local dir
-		dir="$(command holt rm "${@:2}")" || return $?
-		[ -n "$dir" ] && builtin cd "$dir" ;;
+	new|cd|rm|harvest)
+		local out code
+		out="$(command holt "$@")"; code=$?
+		if [ "$code" -ne 0 ]; then
+			[ -n "$out" ] && printf '%s\n' "$out"
+			return "$code"
+		fi
+		if [ -d "$out" ]; then
+			builtin cd "$out"
+		elif [ -n "$out" ]; then
+			printf '%s\n' "$out"
+		fi ;;
 	*)
 		command holt "$@" ;;
 	esac
@@ -33,8 +34,8 @@ const zshBashInit = `holt() {
 const bashCompletion = `_holt() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   if [ "$COMP_CWORD" -eq 1 ]; then
-    COMPREPLY=($(compgen -W "version init validate new ls cd rm" -- "$cur"))
-  elif [ "${COMP_WORDS[1]}" = "cd" ] || [ "${COMP_WORDS[1]}" = "rm" ]; then
+    COMPREPLY=($(compgen -W "version init validate new ls cd rm harvest" -- "$cur"))
+  elif [ "${COMP_WORDS[1]}" = "cd" ] || [ "${COMP_WORDS[1]}" = "rm" ] || [ "${COMP_WORDS[1]}" = "harvest" ]; then
     COMPREPLY=($(compgen -W "$(command holt ls --porcelain | cut -f1)" -- "$cur"))
   fi
 }
@@ -42,8 +43,8 @@ complete -F _holt holt`
 
 const zshCompletion = `_holt() {
   if (( CURRENT == 2 )); then
-    compadd version init validate new ls cd rm
-  elif [[ "$words[2]" == (cd|rm) ]]; then
+    compadd version init validate new ls cd rm harvest
+  elif [[ "$words[2]" == (cd|rm|harvest) ]]; then
     compadd -- ${(f)"$(command holt ls --porcelain | cut -f1)"}
   fi
 }

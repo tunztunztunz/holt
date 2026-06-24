@@ -11,8 +11,10 @@
 
 # macOS
 .DS_Store
-/.idea/inspectionProfiles/Project_Default.xml
 
 # JetBrains
 *.iml
-*.idea
+.idea/
+
+# Personal Claude settings
+settings.local.json

@@ -8,6 +8,8 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
+// Load reads and parses holt.yml from repoRoot, applying defaults. It errors if
+// the file is missing or has unknown fields.
 func Load(repoRoot string) (*Profile, error) {
 	path := filepath.Join(repoRoot, "holt.yml")
 	f, err := os.Open(path)

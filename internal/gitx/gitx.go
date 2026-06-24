@@ -1,6 +1,7 @@
 package gitx
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os/exec"
@@ -109,10 +110,86 @@ func WorktreePrune(repoRoot string) error {
 	return err
 }
 
+// MergeTree dry-runs merging theirs into ours, entirely in memory. It returns
+// the OID of the merged tree (feed it to CommitTree to chain cumulative probes)
+// and the conflicted paths; empty conflicts means the merge is clean.
+func MergeTree(repoRoot, ours, theirs string) (tree string, conflicts []string, err error) {
+	out, code, err := runCode("", "-C", repoRoot, "merge-tree", "--write-tree", "--name-only", ours, theirs)
+	if err != nil {
+		return "", nil, err
+	}
+	switch code {
+	case 0:
+		return strings.TrimSpace(out), nil, nil // clean; whole output is the tree OID
+	case 1:
+		// stdout is: <tree-oid>\n<conflicted path>\n...\n[blank]\n<informational msgs>
+		// Line 0 is the merged tree OID; then the conflicted file names, one per
+		// line, terminated by a blank line. Everything after the blank is human
+		// chatter (Auto-merging…, CONFLICT (add/add):…) — stop there.
+		trimmed := strings.TrimSpace(out)
+		if trimmed == "" {
+			return "", nil, fmt.Errorf("merge-tree reported a conflict but wrote no tree")
+		}
+		lines := strings.Split(trimmed, "\n")
+		tree = strings.TrimSpace(lines[0])
+		for _, ln := range lines[1:] {
+			if strings.TrimSpace(ln) == "" {
+				break // end of conflicted-file list; messages follow
+			}
+			conflicts = append(conflicts, ln)
+		}
+		if len(conflicts) == 0 {
+			conflicts = []string{"(conflict)"}
+		}
+		return tree, conflicts, nil
+	default:
+		return "", nil, fmt.Errorf("merge-tree failed (code %d)", code)
+	}
+}
+
+// CommitTree writes a commit object with the given tree and parent and returns
+// its OID. The commits are dangling and get garbage-collected.
+func CommitTree(repoRoot, tree, parent string) (string, error) {
+	return run("", "-C", repoRoot, "commit-tree", tree, "-p", parent, "-m", "holt harvest probe")
+}
+
+// WorktreeAddFrom creates a worktree at path on a NEW branch based at start.
+// git -C repo worktree add -b <branch> <path> <start>
+func WorktreeAddFrom(repoRoot, path, branch, start string) error {
+	_, err := run("", "-C", repoRoot, "worktree", "add", "-b", branch, path, start)
+	return err
+}
+
+// Merge merges branch into the checkout at worktree (a real merge commit, no fast-forward
+// so the harvest history is legible). Returns an error on conflict; the caller
+// inspects the working tree and stops for hand-resolution.
+func Merge(worktree, branch string) error {
+	_, err := run(worktree, "merge", "--no-ff", branch)
+	return err
+}
+
 // BranchDelete force-deletes a branch (`branch -D`).
 func BranchDelete(repoRoot, branch string) error {
 	_, err := run("", "-C", repoRoot, "branch", "-D", branch)
 	return err
+}
+
+// LocalBranches returns the repo's local branch names.
+func LocalBranches(repoRoot string) ([]string, error) {
+	out, err := run("", "-C", repoRoot, "for-each-ref", "--format=%(refname:short)", "refs/heads")
+	if err != nil {
+		return nil, err
+	}
+	if out == "" {
+		return nil, nil
+	}
+	return strings.Split(out, "\n"), nil
+}
+
+// BranchExists reports whether a local branch with the given name exists.
+func BranchExists(repoRoot, branch string) bool {
+	_, code, err := runCode("", "-C", repoRoot, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
+	return err == nil && code == 0
 }
 
 // StashList returns the repo's stash entries ("" == none). Stashes are
@@ -122,15 +199,37 @@ func StashList(worktree string) (string, error) {
 	return run(worktree, "stash", "list")
 }
 
-func run(dir string, args ...string) (string, error) {
+func gitExec(dir string, args ...string) (stdout, stderr string, code int, err error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = dir
+
+	var errBuf bytes.Buffer
+	cmd.Stderr = &errBuf
 	out, err := cmd.Output()
+	if ee, ok := errors.AsType[*exec.ExitError](err); ok {
+		return string(out), errBuf.String(), ee.ExitCode(), nil
+	}
 	if err != nil {
-		if ee, ok := errors.AsType[*exec.ExitError](err); ok {
-			return "", fmt.Errorf("%s", strings.TrimSpace(string(ee.Stderr)))
-		}
+		return "", errBuf.String(), -1, err // couldn't start git
+	}
+	return string(out), errBuf.String(), 0, nil
+}
+
+func run(dir string, args ...string) (string, error) {
+	out, stderr, code, err := gitExec(dir, args...)
+	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(out)), nil
+	if code != 0 {
+		if msg := strings.TrimSpace(stderr); msg != "" {
+			return "", fmt.Errorf("%s", msg)
+		}
+		return "", fmt.Errorf("git failed (exit %d)", code) // some failures write nothing to stderr
+	}
+	return strings.TrimSpace(out), nil
+}
+
+func runCode(dir string, args ...string) (string, int, error) {
+	out, _, code, err := gitExec(dir, args...)
+	return out, code, err
 }

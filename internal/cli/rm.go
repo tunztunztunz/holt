@@ -9,6 +9,10 @@ import (
 	"github.com/tunztunztunz/holt/internal/vars"
 )
 
+// RmCmd removes a worktree: it runs the configured guards (which warn + confirm,
+// or abort unless --force), runs teardown commands, removes the worktree and its
+// branch, and drops it from state. If the user is standing in the tree being
+// removed, it prints the repo root so the holt() shell wrapper cds them home.
 type RmCmd struct {
 	Name string `arg:"" optional:"" help:"Worktree to remove. Omit to pick from all; 'here' = the current tree."`
 }
@@ -23,15 +27,17 @@ func (c *RmCmd) Run(root Root, profile *config.Profile, store *state.Store, g *G
 
 	inside := isInside(rec.Path)
 
-	def := gitx.DefaultBranch()
+	base := baseFor(rec.BaseBranch, profile)
 
-	// Guards
+	// Guards compare against the tree's own base (recorded fork point → configured
+	// base → repo default); the repo default outright would report "not in main"
+	// for a tree forked off another branch.
 	for _, name := range profile.Guards {
 		gd, ok := guard.Registry[name]
 		if !ok {
 			continue
 		}
-		reason, err := gd.Check(rec.Path, rec.Branch, def)
+		reason, err := gd.Check(rec.Path, rec.Branch, base)
 		if err != nil {
 			return Exitf(ExitRuntime, "%v", err)
 		}

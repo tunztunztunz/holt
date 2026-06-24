@@ -1,18 +1,17 @@
 package cli
 
 import (
-	"path/filepath"
-	"time"
-
 	"github.com/tunztunztunz/holt/internal/config"
 	"github.com/tunztunztunz/holt/internal/gitx"
-	"github.com/tunztunztunz/holt/internal/provision"
 	"github.com/tunztunztunz/holt/internal/state"
-	"github.com/tunztunztunz/holt/internal/vars"
 )
 
+// newCmd creates a worktree for a branch: it attaches an existing local branch
+// or creates a new one off HEAD, allocates a free port, provisions the tree, and
+// prints the new path so the holt() shell wrapper cds into it. With no branch
+// arg it shows a picker of local branches not already in a worktree.
 type newCmd struct {
-	Branch string `arg:"" help:"Branch to create and check out in the new worktree."`
+	Branch string `arg:"" optional:"" help:"Branch to attach (if it exists) or create. Omit to pick."`
 }
 
 func (c *newCmd) Run(root Root, profile *config.Profile, store *state.Store) error {
@@ -22,97 +21,45 @@ func (c *newCmd) Run(root Root, profile *config.Profile, store *state.Store) err
 		return Exitf(ExitUsage, "%v", err)
 	}
 
-	v, err := vars.Resolve(repo, c.Branch, profile)
+	branch, err := pickBranch(c.Branch, repo)
 	if err != nil {
-		return Exitf(ExitUsage, "%v", err)
+		return err
 	}
+	newBranch := !gitx.BranchExists(repo, branch)
 
-	if _, ok := store.Worktrees[v.SiteName]; ok {
-		return Exitf(ExitConflict, "worktree %s already exists", v.SiteName)
-	}
-
-	taken := make(map[int]bool)
-	for _, t := range store.Worktrees {
-		taken[t.Port] = true
-	}
-
-	port, err := provision.AllocatePort(profile.Port, v.SiteName, taken)
+	v, err := prepareWorktree(repo, branch, profile, store)
 	if err != nil {
-		return Exitf(ExitUsage, "%v", err)
+		return err
 	}
-	v.Port = port
+	if v.Port, err = allocatePort(profile, v.SiteName, store); err != nil {
+		return err
+	}
 
-	if err := gitx.WorktreeAdd(repo, v.Worktree, c.Branch, true); err != nil {
+	// Attach the existing branch, or create it off the current HEAD.
+	if err = gitx.WorktreeAdd(repo, v.Worktree, branch, newBranch); err != nil {
 		return Exitf(ExitConflict, "%v", err)
 	}
 
-	rec := &state.Record{
-		SiteName:     v.SiteName,
-		Branch:       c.Branch,
-		BaseBranch:   gitx.CurrentBranch(repo),
-		Path:         v.Worktree,
-		Port:         port,
-		Status:       "provisioning",
-		CreatedAt:    time.Now(),
-		LastActivity: time.Now(),
-	}
+	rec := provisioningRecord(v, branch, baseForNew(repo, newBranch, profile))
 	store.Worktrees[v.SiteName] = rec
-
 	if err = state.Save(repo, store); err != nil {
 		return Exitf(ExitRuntime, "%v", err)
 	}
 
-	if err := provisionWorktree(repo, v, profile); err != nil {
-		rec.Status = "broken"
-		_ = state.Save(repo, store)
-		return Exitf(ExitRuntime, "%v", err)
-	}
-
-	rec.Status = "ready"
-	rec.LastActivity = time.Now()
-	if err := state.Save(repo, store); err != nil {
-		return Exitf(ExitRuntime, "%v", err)
+	if err = finalizeWorktree(repo, v, profile, rec, store, true); err != nil {
+		return err
 	}
 
 	resultf("%s\n", v.Worktree)
 	return nil
 }
 
-// provisionWorktree runs the copy, env, and setup steps against an already
-// created worktree. It returns the first error encountered, leaving the
-// caller to decide how to record the failure.
-func provisionWorktree(root string, v *vars.Vars, p *config.Profile) error {
-	for _, entry := range p.Copy {
-		e, err := v.Expand(entry)
-		if err != nil {
-			return err
-		}
-
-		skip, err := provision.Copy(filepath.Join(root, e), filepath.Join(v.Worktree, e))
-		if err != nil {
-			return err
-		}
-		if skip != "" {
-			warnf("copy %s: %s", e, skip)
-		}
+// baseForNew records where the worktree forks from: a freshly created branch
+// forks off the current HEAD; an attached existing branch has no obvious fork
+// point, so fall back to the shared base resolution.
+func baseForNew(repo string, newBranch bool, profile *config.Profile) string {
+	if newBranch {
+		return gitx.CurrentBranch(repo)
 	}
-
-	for _, block := range p.Env {
-		if err := provision.RenderEnv(v.Worktree, block, v.Expand); err != nil {
-			return err
-		}
-	}
-
-	env := v.Environ()
-	for _, line := range p.Setup {
-		l, err := v.Expand(line)
-		if err != nil {
-			return err
-		}
-		if err := provision.RunCommand(v.Worktree, l, env); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return baseFor("", profile)
 }

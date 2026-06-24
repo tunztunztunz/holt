@@ -1,5 +1,6 @@
 package config
 
+// Profile is a parsed holt.yml: how to build, provision, and tear down a worktree.
 type Profile struct {
 	Version      int        `yaml:"version"`
 	SiteName     string     `yaml:"site_name"`

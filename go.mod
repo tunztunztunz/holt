@@ -6,6 +6,7 @@ require (
 	charm.land/huh/v2 v2.0.3
 	charm.land/lipgloss/v2 v2.0.4
 	github.com/alecthomas/kong v1.15.0
+	github.com/google/go-cmp v0.7.0
 	github.com/sahilm/fuzzy v0.1.3
 	go.yaml.in/yaml/v3 v3.0.4
 )

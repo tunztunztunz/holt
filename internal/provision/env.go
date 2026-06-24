@@ -70,8 +70,7 @@ func RenderEnv(worktree string, b config.EnvBlock, expand func(string) (string, 
 		}
 		lines = append(lines, k+"="+val)
 	}
-
-	return os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644)
+	return os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o600)
 }
 
 func keyOf(line string) (string, bool) {

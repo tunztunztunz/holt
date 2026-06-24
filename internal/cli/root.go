@@ -17,4 +17,5 @@ type CLI struct {
 	Ls        LsCmd        `cmd:"" help:"List worktrees with status."`
 	Cd        CdCmd        `cmd:"" help:"Print a worktree's path (for shell cd)."`
 	Rm        RmCmd        `cmd:"" help:"Remove a worktree."`
+	Harvest   HarvestCmd   `cmd:"" help:"Forecast integrating worktrees onto their base branch."`
 }

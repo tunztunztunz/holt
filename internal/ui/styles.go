@@ -3,7 +3,10 @@
 // one consistent palette instead of re-declaring styles per command.
 package ui
 
-import "charm.land/lipgloss/v2"
+import (
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/table"
+)
 
 // Palette is holt's terminal color set. Everything visual references these, so a
 // theme change happens here, once.
@@ -20,3 +23,16 @@ var (
 	TableCell   = lipgloss.NewStyle().Padding(0, 1)
 	TableBorder = lipgloss.NewStyle().Foreground(Muted)
 )
+
+func Table(headers ...string) *table.Table {
+	return table.New().
+		Border(lipgloss.RoundedBorder()).
+		BorderStyle(TableBorder).
+		Headers(headers...).
+		StyleFunc(func(row, _ int) lipgloss.Style {
+			if row == table.HeaderRow {
+				return TableHeader
+			}
+			return TableCell
+		})
+}

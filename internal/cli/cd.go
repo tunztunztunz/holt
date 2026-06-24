@@ -7,6 +7,10 @@ import (
 	"github.com/tunztunztunz/holt/internal/state"
 )
 
+// CdCmd resolves a worktree and prints its path to stdout; it never changes
+// directory itself — the holt() shell wrapper cds into whatever path it prints.
+// The main worktree (untracked in state) is injected as a target for this
+// invocation only.
 type CdCmd struct {
 	Name string `arg:"" optional:"" help:"Worktree to move to. Omit to pick from all; 'here' is a no-op."`
 }
